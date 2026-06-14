@@ -5,20 +5,17 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Kasir SPBU Pro</title>
     
-    <!-- WAJIB UNTUK PWA & APK -->
     <link rel="manifest" href="manifest.json">
     <meta name="mobile-web-app-capable" content="yes">
     <meta name="apple-mobile-web-app-capable" content="yes">
     <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
     <meta name="theme-color" content="#1976d2">
     <link rel="apple-touch-icon" href="icon.png">
-    <!-- ======================= -->
 
     <style>
         body { font-family: Arial, sans-serif; margin: 15px; background-color: #f4f4f9; }
         .container { display: flex; gap: 20px; flex-wrap: wrap; align-items: flex-start; }
         .box { background: #fff; padding: 20px; border-radius: 8px; box-shadow: 0 2px 4px rgba(0,0,0,0.1); width: 100%; max-width: 380px; box-sizing: border-box; }
-        
         .section-title { font-size: 14px; color: #1976d2; border-bottom: 2px solid #e3f2fd; padding-bottom: 5px; margin-bottom: 10px; margin-top: 15px; }
         .grid-2 { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; }
         label { display: block; margin-top: 10px; font-weight: bold; font-size: 12px; color: #333; }
@@ -28,16 +25,15 @@
         
         .btn-preview { background-color: #546e7a; color: white; border: none; font-weight: bold; cursor: pointer; margin-top: 20px; border-radius: 4px; padding: 12px; width: 100%; }
         .btn-print { background-color: #1976d2; color: white; border: none; font-weight: bold; cursor: pointer; margin-top: 10px; border-radius: 4px; padding: 14px; width: 100%; }
+        .btn-reset { background-color: #e53935; color: white; border: none; font-weight: bold; cursor: pointer; margin-top: 10px; border-radius: 4px; padding: 10px; width: 100%; }
+        
         .btn-clear { background-color: #757575; color: white; border: none; font-size: 12px; padding: 8px; cursor: pointer; border-radius: 4px; margin-top: 15px; width: 100%; }
         .btn-reprint { background-color: #2e7d32; color: white; border: none; font-size: 11px; padding: 5px 8px; cursor: pointer; border-radius: 3px; font-weight: bold; }
-        
         #statusText { margin-top: 10px; font-size: 13px; font-weight: bold; text-align: center; color: #d32f2f; }
-
         .struk-wrapper { background: #fffde7; padding: 15px; border: 1px dashed #ccc; margin-top: 10px; overflow-x: auto; }
         .logo-preview { text-align: center; margin-bottom: 10px; min-height: 55px; }
         .logo-preview img { max-width: 140px; max-height: 80px; filter: grayscale(100%); object-fit: contain; }
         pre { font-family: 'Courier New', Courier, monospace; font-size: 12px; white-space: pre; color: #000; margin: 0; padding: 0; border: none; background: transparent; }
-
         table { width: 100%; border-collapse: collapse; margin-top: 10px; font-size: 12px; }
         th, td { padding: 8px 5px; border-bottom: 1px solid #ddd; text-align: left; }
         th { background-color: #f5f5f5; font-weight: bold; }
@@ -50,7 +46,6 @@
     <h2>Aplikasi Kasir SPBU Pro</h2>
     
     <div class="container">
-        <!-- FORM INPUT -->
         <div class="box">
             <label>Upload Logo (Opsional)</label>
             <input type="file" id="inputLogo" accept="image/*">
@@ -66,11 +61,8 @@
             </div>
 
             <div class="section-title">2. Data Transaksi</div>
-            
-            <!-- TAMBAHAN: Kolom Waktu & Tanggal Bisa Diedit -->
             <label>Tanggal & Waktu (Otomatis / Bisa Diedit)</label>
             <input type="text" id="waktuCustom" class="input-highlight" placeholder="Contoh: 14/06/2026 10:05">
-
             <div class="grid-2">
                 <div><label>Shift</label><input type="text" id="shift" value="1"></div>
                 <div><label>No. Trans</label><input type="text" id="noTrans" value="5258729"></div>
@@ -91,21 +83,19 @@
                 <option value="PERTAMINA DEX">PERTAMINA DEX</option>
                 <option value="DEXLITE">DEXLITE</option>
             </select>
-
             <div class="grid-2">
                 <div><label>Harga / Liter (Rp)</label><input type="number" id="hargaBbm" value="12300"></div>
                 <div><label>Total Beli (Rp)</label><input type="number" id="beliRp" value="200000"></div>
             </div>
-
             <label>Ucapan Penutup (Opsional)</label>
             <input type="text" id="keterangan" value="TERIMA KASIH DAN SELAMAT JALAN">
 
             <button class="btn-preview" onclick="buatStruk()">BUAT PREVIEW</button>
             <button class="btn-print" onclick="printBluetooth()">CETAK BLUETOOTH</button>
+            <button class="btn-reset" onclick="putuskanBluetooth()">RESET KONEKSI PRINTER</button>
             <div id="statusText">Status: Standby</div>
         </div>
 
-        <!-- KOTAK PREVIEW -->
         <div class="box">
             <label>Preview Struk:</label>
             <div class="struk-wrapper">
@@ -114,7 +104,6 @@
             </div>
         </div>
 
-        <!-- KOTAK RIWAYAT -->
         <div class="box">
             <label style="font-size: 16px; margin-top: 0;">Riwayat Cetak Berhasil</label>
             <div style="overflow-x: auto;">
@@ -129,14 +118,12 @@
         </div>
     </div>
 
-    <!-- SCRIPT APLIKASI UTAMA -->
     <script>
         let teksStrukGlobal = "";
         let bluetoothCharacteristic = null;
+        let bluetoothDeviceGlobal = null;
 
-        // FUNGSI SAAT APLIKASI PERTAMA KALI DIBUKA
         window.onload = function() {
-            // Isi otomatis kolom waktu dengan waktu real-time saat ini
             document.getElementById("waktuCustom").value = dapatkanWaktu();
             tampilkanRiwayat();
         };
@@ -150,24 +137,14 @@
         function centerText(text, maxWidth) { return text.length >= maxWidth ? text : " ".repeat(Math.floor((maxWidth - text.length) / 2)) + text; }
         function leftRightText(left, right, maxWidth) { const space = maxWidth - left.length - right.length; return space <= 0 ? left + " " + right : left + " ".repeat(space) + right; }
         function formatAngka(angka) { return new Intl.NumberFormat('en-US').format(angka); }
-        
-        // Fungsi mengambil waktu Real-Time (sekarang)
-        function dapatkanWaktu() { 
-            const now = new Date(); 
-            const pad = (n) => n.toString().padStart(2, '0'); 
-            return `${pad(now.getDate())}/${pad(now.getMonth()+1)}/${now.getFullYear()} ${pad(now.getHours())}:${pad(now.getMinutes())}`; 
-        }
+        function dapatkanWaktu() { const now = new Date(); const pad = (n) => n.toString().padStart(2, '0'); return `${pad(now.getDate())}/${pad(now.getMonth()+1)}/${now.getFullYear()} ${pad(now.getHours())}:${pad(now.getMinutes())}`; }
 
-        // --- MENYUSUN STRUK ---
         function buatStruk() {
             const noSpbu = document.getElementById("noSpbu").value.trim().toUpperCase();
             const namaSpbu = document.getElementById("namaSpbu").value.trim().toUpperCase();
             const alamatSpbu = document.getElementById("alamatSpbu").value.trim().toUpperCase();
             const telpSpbu = document.getElementById("telpSpbu").value.trim();
-            
-            // Mengambil waktu dari kolom input (bukan dari real-time lagi)
             const waktuStruk = document.getElementById("waktuCustom").value.trim(); 
-            
             const shift = document.getElementById("shift").value;
             const noTrans = document.getElementById("noTrans").value;
             const pompa = document.getElementById("pompa").value;
@@ -184,12 +161,8 @@
             if (namaSpbu !== "") k += centerText(namaSpbu, LEBAR) + "\n";
             if (alamatSpbu !== "") k += centerText(alamatSpbu, LEBAR) + "\n";
             if (telpSpbu !== "") k += centerText(telpSpbu, LEBAR) + "\n";
-            
             k += leftRightText(`Shift: ${shift}`, `No. Trans: ${noTrans}`, LEBAR) + "\n";
-            
-            // Memasukkan waktu yang sudah bisa diedit
             k += `Waktu: ${waktuStruk}\n`;
-            
             k += "-".repeat(LEBAR) + "\n";
             k += "Pulau/Pompa".padEnd(11) + `: ${pompa}\n`;
             k += "Nama Produk".padEnd(11) + `: ${jenisBbm}\n`;
@@ -201,7 +174,6 @@
             k += "CASH\n";
             k += formatAngka(beliRp).padStart(LEBAR) + "\n"; 
             k += "-".repeat(LEBAR) + "\n";
-            
             if (platNo !== "") k += "Plat No    ".padEnd(11) + `: ${platNo}\n`;
             if (keterangan !== "") k += "\n" + centerText(keterangan, LEBAR) + "\n";
             k += "\n\n\n\n";
@@ -211,13 +183,7 @@
         }
 
         function simpanRiwayat() {
-            const dataBaru = { 
-                waktu: document.getElementById("waktuCustom").value.trim(), 
-                platNo: document.getElementById("platNo").value || "-", 
-                jenisBbm: document.getElementById("jenisBbm").value, 
-                total: document.getElementById("beliRp").value, 
-                strukAsli: teksStrukGlobal 
-            };
+            const dataBaru = { waktu: document.getElementById("waktuCustom").value.trim(), platNo: document.getElementById("platNo").value || "-", jenisBbm: document.getElementById("jenisBbm").value, total: document.getElementById("beliRp").value, strukAsli: teksStrukGlobal };
             let riwayatLama = JSON.parse(localStorage.getItem("riwayatStrukBbm")) || [];
             riwayatLama.unshift(dataBaru);
             localStorage.setItem("riwayatStrukBbm", JSON.stringify(riwayatLama.slice(0, 20)));
@@ -231,7 +197,6 @@
             if (riwayat.length === 0) { isiTabel.innerHTML = `<tr><td colspan="5" style="text-align:center; color:#888;">Belum ada riwayat cetak</td></tr>`; return; }
             riwayat.forEach((item, index) => {
                 const tr = document.createElement("tr");
-                // Memunculkan tanggal & waktu secara penuh di tabel
                 tr.innerHTML = `<td>${item.waktu}</td><td>${item.platNo.toUpperCase()}</td><td>${item.jenisBbm}</td><td class="text-right">${formatAngka(item.total)}</td><td class="text-center"><button class="btn-reprint" onclick="cetakUlang(${index})">PRINT</button></td>`;
                 isiTabel.appendChild(tr);
             });
@@ -276,28 +241,65 @@
             }
         }
 
+        function putuskanBluetooth() {
+            if (bluetoothDeviceGlobal && bluetoothDeviceGlobal.gatt.connected) {
+                bluetoothDeviceGlobal.gatt.disconnect();
+            }
+            bluetoothCharacteristic = null;
+            document.getElementById("statusText").innerText = "Status: Koneksi Di-reset. Standby.";
+            document.getElementById("statusText").style.color = "#d32f2f";
+            alert("Jalur Bluetooth telah dibersihkan! Silakan klik CETAK BLUETOOTH lagi.");
+        }
+
         async function eksekusiBluetooth(teksCetak) {
             const statusDiv = document.getElementById("statusText");
+            
+            // DETEKSI BROWSER: Jika sistem memblokir atau bukan Chrome
+            if (!navigator.bluetooth) {
+                statusDiv.innerText = "Error: Browser ini memblokir akses Bluetooth!"; 
+                statusDiv.style.color = "red";
+                alert("GAGAL: Browser atau Aplikasi ini tidak mengizinkan akses Bluetooth. PASTIKAN Anda menggunakan Google Chrome asli!");
+                return false;
+            }
+
             try {
                 if (!bluetoothCharacteristic) {
-                    statusDiv.innerText = "Status: Meminta izin Bluetooth..."; statusDiv.style.color = "orange";
-                    const device = await navigator.bluetooth.requestDevice({ acceptAllDevices: true, optionalServices: ['000018f0-0000-1000-8000-00805f9b34fb'] });
+                    statusDiv.innerText = "Status: Meminta izin Bluetooth (Klik pop-up yang muncul)..."; statusDiv.style.color = "orange";
+                    
+                    const device = await navigator.bluetooth.requestDevice({ 
+                        acceptAllDevices: true, 
+                        optionalServices: ['000018f0-0000-1000-8000-00805f9b34fb'] 
+                    });
+                    
+                    bluetoothDeviceGlobal = device;
+
+                    statusDiv.innerText = "Status: Menyambungkan ke " + device.name + "...";
                     const server = await device.gatt.connect();
+                    
+                    statusDiv.innerText = "Status: Menyiapkan mesin printer...";
                     const service = await server.getPrimaryService('000018f0-0000-1000-8000-00805f9b34fb');
                     bluetoothCharacteristic = await service.getCharacteristic('00002af1-0000-1000-8000-00805f9b34fb');
                 }
-                statusDiv.innerText = "Status: Sedang mengirim data...";
+                
+                statusDiv.innerText = "Status: Sedang mengirim data cetak...";
                 const imgUpload = document.getElementById("logoUpload");
                 if (imgUpload.src && imgUpload.style.display !== 'none') {
                     statusDiv.innerText = "Status: Memproses Gambar...";
                     const imageEscData = await generateImageESCData(imgUpload);
                     await kirimDataBertahap(bluetoothCharacteristic, imageEscData);
                 }
+                
                 const encoder = new TextEncoder();
                 await kirimDataBertahap(bluetoothCharacteristic, encoder.encode(teksCetak));
+                
                 statusDiv.innerText = "Status: Berhasil Dicetak Penuh!"; statusDiv.style.color = "green";
                 return true;
-            } catch (error) { console.error(error); statusDiv.innerText = "Gagal: " + error.message; statusDiv.style.color = "red"; bluetoothCharacteristic = null; return false; }
+            } catch (error) { 
+                console.error(error); 
+                statusDiv.innerText = "Gagal: " + error.message; statusDiv.style.color = "red"; 
+                bluetoothCharacteristic = null; 
+                return false; 
+            }
         }
 
         async function printBluetooth() {
@@ -305,12 +307,8 @@
             const sukses = await eksekusiBluetooth(teksStrukGlobal);
             if (sukses) {
                 simpanRiwayat();
-                
-                // Menaikkan No Transaksi Otomatis
                 let transLama = parseInt(document.getElementById("noTrans").value);
                 if (!isNaN(transLama)) document.getElementById("noTrans").value = transLama + 1;
-                
-                // Memperbarui kolom waktu dengan waktu terbaru setelah cetak berhasil
                 document.getElementById("waktuCustom").value = dapatkanWaktu();
             }
         }
@@ -322,16 +320,13 @@
         }
     </script>
 
-    <!-- KODE REGISTRASI SERVICE WORKER UNTUK PWA -->
     <script>
         if ('serviceWorker' in navigator) {
             window.addEventListener('load', () => {
                 navigator.serviceWorker.register('sw.js')
-                    .then(reg => console.log('Service Worker berhasil didaftarkan!', reg))
                     .catch(err => console.error('Service Worker gagal:', err));
             });
         }
     </script>
-
 </body>
 </html>
