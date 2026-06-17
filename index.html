@@ -33,7 +33,7 @@
         .struk-wrapper { background: #fffde7; padding: 15px; border: 1px dashed #ccc; margin-top: 10px; overflow-x: auto; }
         .logo-preview { text-align: center; margin-bottom: 10px; min-height: 55px; }
         .logo-preview img { max-width: 140px; max-height: 80px; filter: grayscale(100%); object-fit: contain; }
-        pre { font-family: 'Courier New', Courier, monospace; font-size: 12px; white-space: pre; color: #000; margin: 0; padding: 0; border: none; background: transparent; }
+        pre { font-family: 'Courier New', Courier, monospace; font-size: 12px; white-space: pre; color: #000; margin: 0; padding: 0; border: none; background: transparent; line-height: 1.2; }
         table { width: 100%; border-collapse: collapse; margin-top: 10px; font-size: 12px; }
         th, td { padding: 8px 5px; border-bottom: 1px solid #ddd; text-align: left; }
         th { background-color: #f5f5f5; font-weight: bold; }
@@ -62,10 +62,10 @@
 
             <div class="section-title">2. Data Transaksi</div>
             <label>Tanggal & Waktu (Otomatis / Bisa Diedit)</label>
-            <input type="text" id="waktuCustom" class="input-highlight" placeholder="Contoh: 14/06/2026 10:05">
+            <input type="text" id="waktuCustom" class="input-highlight" placeholder="Contoh: 17/06/2026 20:13">
             <div class="grid-2">
                 <div><label>Shift</label><input type="text" id="shift" value="1"></div>
-                <div><label>No. Trans</label><input type="text" id="noTrans" value="5258729"></div>
+                <div><label>No. Trans</label><input type="text" id="noTrans" value="5258730"></div>
             </div>
             <div class="grid-2">
                 <div><label>Pompa</label><input type="text" id="pompa" value="3"></div>
@@ -87,7 +87,11 @@
                 <div><label>Harga / Liter (Rp)</label><input type="number" id="hargaBbm" value="12300"></div>
                 <div><label>Total Beli (Rp)</label><input type="number" id="beliRp" value="200000"></div>
             </div>
-            <label>Ucapan Penutup (Opsional)</label>
+            
+            <label style="color: #d32f2f;">Pesan Subsidi (Otomatis ditata rata tengah)</label>
+            <input type="text" id="pesanSubsidi" value="Anda mendapat subsidi dari pemerintah sebesar Rp 36.704">
+            
+            <label style="color: #1976d2;">Ucapan Terima Kasih</label>
             <input type="text" id="keterangan" value="TERIMA KASIH DAN SELAMAT JALAN">
 
             <button class="btn-preview" onclick="buatStruk()">BUAT PREVIEW</button>
@@ -134,7 +138,31 @@
             if (file) { const reader = new FileReader(); reader.onload = (e) => { logo.src = e.target.result; logo.style.display = 'inline-block'; }; reader.readAsDataURL(file); }
         });
 
-        function centerText(text, maxWidth) { return text.length >= maxWidth ? text : " ".repeat(Math.floor((maxWidth - text.length) / 2)) + text; }
+        // FUNGSI UNTUK MERAPIKAN TEKS KE TENGAH SECARA OTOMATIS
+        function centerText(text, maxWidth) { 
+            return text.length >= maxWidth ? text : " ".repeat(Math.floor((maxWidth - text.length) / 2)) + text; 
+        }
+        
+        function autoWrapCenter(text, maxWidth) {
+            if (!text) return "";
+            const words = text.split(" ");
+            let lines = [];
+            let currentLine = "";
+
+            words.forEach(word => {
+                if ((currentLine + word).length > maxWidth) {
+                    lines.push(centerText(currentLine.trim(), maxWidth));
+                    currentLine = word + " ";
+                } else {
+                    currentLine += word + " ";
+                }
+            });
+            if (currentLine.trim().length > 0) {
+                lines.push(centerText(currentLine.trim(), maxWidth));
+            }
+            return lines.join("\n");
+        }
+
         function leftRightText(left, right, maxWidth) { const space = maxWidth - left.length - right.length; return space <= 0 ? left + " " + right : left + " ".repeat(space) + right; }
         function formatAngka(angka) { return new Intl.NumberFormat('en-US').format(angka); }
         function dapatkanWaktu() { const now = new Date(); const pad = (n) => n.toString().padStart(2, '0'); return `${pad(now.getDate())}/${pad(now.getMonth()+1)}/${now.getFullYear()} ${pad(now.getHours())}:${pad(now.getMinutes())}`; }
@@ -150,7 +178,11 @@
             const pompa = document.getElementById("pompa").value;
             const operator = document.getElementById("operator").value.toUpperCase();
             const platNo = document.getElementById("platNo").value.trim().toUpperCase(); 
+            
+            // Mengambil 2 ucapan yang baru dibuat
+            const pesanSubsidi = document.getElementById("pesanSubsidi").value.trim().toUpperCase();
             const keterangan = document.getElementById("keterangan").value.trim().toUpperCase();
+            
             const jenisBbm = document.getElementById("jenisBbm").value;
             const hargaBbm = parseFloat(document.getElementById("hargaBbm").value);
             const beliRp = parseFloat(document.getElementById("beliRp").value);
@@ -175,7 +207,15 @@
             k += formatAngka(beliRp).padStart(LEBAR) + "\n"; 
             k += "-".repeat(LEBAR) + "\n";
             if (platNo !== "") k += "Plat No    ".padEnd(11) + `: ${platNo}\n`;
-            if (keterangan !== "") k += "\n" + centerText(keterangan, LEBAR) + "\n";
+            
+            // Menyisipkan pesan subsidi & terima kasih agar tertata rapi
+            if (pesanSubsidi !== "") {
+                k += "\n" + autoWrapCenter(pesanSubsidi, LEBAR) + "\n";
+            }
+            if (keterangan !== "") {
+                k += "\n" + autoWrapCenter(keterangan, LEBAR) + "\n";
+            }
+            
             k += "\n\n\n\n";
 
             teksStrukGlobal = k;
@@ -254,7 +294,6 @@
         async function eksekusiBluetooth(teksCetak) {
             const statusDiv = document.getElementById("statusText");
             
-            // DETEKSI BROWSER: Jika sistem memblokir atau bukan Chrome
             if (!navigator.bluetooth) {
                 statusDiv.innerText = "Error: Browser ini memblokir akses Bluetooth!"; 
                 statusDiv.style.color = "red";
